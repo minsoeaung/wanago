@@ -1,26 +1,47 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { Repository } from 'typeorm';
+import { Post } from './entities/post.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class PostsService {
-  create(createPostDto: CreatePostDto) {
-    return 'This action adds a new post';
+  constructor(
+    @InjectRepository(Post) private postRepository: Repository<Post>,
+  ) {}
+
+  async create(createPostDto: CreatePostDto) {
+    const newPost = await this.postRepository.create(createPostDto);
+    await this.postRepository.save(newPost);
+    return newPost;
   }
 
   findAll() {
-    return `This action returns all posts. Yes literally all posts.`;
+    return this.postRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} post`;
+  async findOne(id: number) {
+    const post = await this.postRepository.findOneBy({ id });
+    if (post) {
+      return post;
+    }
+    throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
   }
 
-  update(id: number, updatePostDto: UpdatePostDto) {
-    return `This action updates a #${id} post`;
+  async update(id: number, updatePostDto: UpdatePostDto) {
+    await this.postRepository.update(id, updatePostDto);
+    const updatedPost = await this.postRepository.findOneBy({ id });
+    if (updatedPost) {
+      return updatedPost;
+    }
+    throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} post`;
+  async remove(id: number) {
+    const deleteResponse = await this.postRepository.delete({ id });
+    if (!deleteResponse.affected) {
+      throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
+    }
   }
 }

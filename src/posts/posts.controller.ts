@@ -6,7 +6,6 @@ import {
   Param,
   Patch,
   Post,
-  Put,
   Req,
   Res,
 } from '@nestjs/common';
@@ -56,10 +55,5 @@ export class PostsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.postsService.remove(+id);
-  }
-
-  @Put(':id')
-  replace(@Param('id') id: string) {
-
   }
 }
