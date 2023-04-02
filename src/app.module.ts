@@ -3,11 +3,11 @@ import { PostsModule } from './posts/posts.module';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import * as Joi from 'joi';
-import { DatabaseModule } from './database.module';
+import { DatabaseModule } from './database/database.module';
+import { AuthenticationModule } from './authentication/authentication.module';
 
 @Module({
   imports: [
-    PostsModule,
     ConfigModule.forRoot({
       validationSchema: Joi.object({
         POSTGRES_HOST: Joi.string().required(),
@@ -19,9 +19,9 @@ import { DatabaseModule } from './database.module';
       }),
     }),
     DatabaseModule,
+    PostsModule,
     UsersModule,
+    AuthenticationModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}
