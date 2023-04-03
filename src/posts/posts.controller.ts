@@ -8,17 +8,22 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Request, Response } from 'express';
+import { JwtAuthenticationGuard } from '../authentication/jwt-authentication.guard';
 
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post()
+  // Post controller is able to use this guard with doing anything to its module
+  // Meanwhile authentication guard is busy with lots of importing for this guard to work nicely
+  @UseGuards(JwtAuthenticationGuard)
   create(@Body() createPostDto: CreatePostDto) {
     return this.postsService.create(createPostDto);
   }

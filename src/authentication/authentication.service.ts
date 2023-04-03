@@ -1,14 +1,21 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { TokenPayload } from './tokenPayload.interface';
 
 @Injectable()
 export class AuthenticationService {
   // We used another service inside this service
   // To do this, we imported UsersModule in our AuthenticationModule
   // UsersModule exported UsersService
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {}
 
   async register(userDto: CreateUserDto) {
     const hashPassword = await bcrypt.hash(userDto.password, 10);
@@ -20,7 +27,7 @@ export class AuthenticationService {
       createdUser.password = undefined;
       return createdUser;
     } catch (e) {
-      if (e.code === PostgresErrorCode.UniqueViolation) {
+      if (e.code === '23505') {
         throw new HttpException(
           'User with that email already exists',
           HttpStatus.BAD_REQUEST,
@@ -33,6 +40,7 @@ export class AuthenticationService {
     }
   }
 
+  // This method is created for use inside PASSPORT STRATEGY
   async getAuthenticatedUser(email: string, hashedPassword: string) {
     try {
       const user = await this.usersService.findOneByEmail(email);
@@ -60,5 +68,18 @@ export class AuthenticationService {
         HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  getCookieWithJwtToken(userId: number) {
+    const payload: TokenPayload = { userId };
+    const token = this.jwtService.sign(payload);
+    return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get(
+      'JWT_EXPIRATION_TIME',
+    )}`;
+  }
+
+  // Nice
+  getCookieForLogOut() {
+    return `Authentication=; HttpOnly; Path=/; Max-Age=0`;
   }
 }
