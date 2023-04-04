@@ -20,12 +20,12 @@ export class AuthenticationService {
   async register(userDto: CreateUserDto) {
     const hashPassword = await bcrypt.hash(userDto.password, 10);
     try {
-      const createdUser = await this.usersService.create({
+      // This line is not needed anymore because we only expose name and email in User Entity
+      // createdUser.password = undefined;
+      return await this.usersService.create({
         ...userDto,
         password: hashPassword,
       });
-      createdUser.password = undefined;
-      return createdUser;
     } catch (e) {
       if (e.code === '23505') {
         throw new HttpException(

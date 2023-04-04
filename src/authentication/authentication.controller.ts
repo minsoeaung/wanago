@@ -6,6 +6,7 @@ import {
   Post,
   Req,
   Res,
+  SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
@@ -16,6 +17,10 @@ import { Response } from 'express';
 import { JwtAuthenticationGuard } from './jwt-authentication.guard';
 
 @Controller('authentication')
+// Without this and only with @Exclude(), emit error will occur, reason unknown
+@SerializeOptions({
+  strategy: 'excludeAll',
+})
 export class AuthenticationController {
   constructor(private readonly authenticationService: AuthenticationService) {}
 
@@ -25,9 +30,7 @@ export class AuthenticationController {
   @UseGuards(JwtAuthenticationGuard)
   @Get()
   authenticate(@Req() request: RequestWithUser) {
-    const user = request.user;
-    user.password = undefined;
-    return user;
+    return request.user;
   }
 
   @Post('register')
@@ -47,7 +50,6 @@ export class AuthenticationController {
     const { user } = request;
     const cookie = this.authenticationService.getCookieWithJwtToken(user.id);
     response.setHeader('Set-Cookie', cookie);
-    user.password = undefined;
     // Here responding with native express
     return response.send(user);
   }
