@@ -6,4 +6,7 @@ export class CreatePostDto {
 
   @IsString()
   title: string;
+
+  @IsString()
+  note?: string;
 }

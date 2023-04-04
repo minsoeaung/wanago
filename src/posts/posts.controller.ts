@@ -58,6 +58,8 @@ export class PostsController {
     return this.postsService.update(+id, updatePostDto);
   }
 
+  // PUT method for post
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.postsService.remove(+id);
