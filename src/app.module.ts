@@ -5,6 +5,8 @@ import { UsersModule } from './users/users.module';
 import * as Joi from 'joi';
 import { DatabaseModule } from './database/database.module';
 import { AuthenticationModule } from './authentication/authentication.module';
+import { APP_FILTER } from '@nestjs/core';
+import { ExceptionsLoggerFilter } from './utils/exceptionsLogger.filter';
 
 @Module({
   imports: [
@@ -24,6 +26,12 @@ import { AuthenticationModule } from './authentication/authentication.module';
     PostsModule,
     UsersModule,
     AuthenticationModule,
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: ExceptionsLoggerFilter,
+    },
   ],
 })
 export class AppModule {}

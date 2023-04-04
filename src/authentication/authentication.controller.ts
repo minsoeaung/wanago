@@ -31,8 +31,8 @@ export class AuthenticationController {
   }
 
   @Post('register')
-  create(@Body() userDto: CreateUserDto) {
-    return this.authenticationService.register(userDto);
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.authenticationService.register(createUserDto);
   }
 
   // Because NestJS responds with 201 Created for POST requests by default
