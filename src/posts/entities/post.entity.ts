@@ -1,6 +1,13 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { Transform } from 'class-transformer';
+import { Category } from '../../categories/entities/category.entity';
 
 @Entity()
 export class Post {
@@ -13,9 +20,9 @@ export class Post {
   @Column()
   title: string;
 
-  @Column({ nullable: true })
-  @Transform(({ value }) => (value !== null ? value : ''))
-  category?: string;
+  // @Column({ nullable: true })
+  // @Transform(({ value }) => (value !== null ? value : ''))
+  // category?: string;
 
   // *** This one does not have JoinColumn, but it will have authorId in database
 
@@ -35,6 +42,10 @@ export class Post {
   // I think it is more convenient to send empty string for frontend
   // A property should only have one type, <once a string, always a string>
   // Once null, next string is not good
+
+  @ManyToMany(() => Category, (category: Category) => category.posts)
+  @JoinTable() // What if I don't do that?
+  categories: Category[];
 }
 
 // Recursively exclude null value

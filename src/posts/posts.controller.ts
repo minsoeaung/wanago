@@ -8,6 +8,7 @@ import {
   Post,
   Req,
   UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -24,7 +25,11 @@ export class PostsController {
   // Post controller is able to use this guard with doing anything to its module
   // Meanwhile authentication guard is busy with lots of importing for this guard to work nicely
   @UseGuards(JwtAuthenticationGuard)
-  create(@Body() createPostDto: CreatePostDto, @Req() req: RequestWithUser) {
+  create(
+    @Body(new ValidationPipe()) createPostDto: CreatePostDto,
+    @Req() req: RequestWithUser,
+  ) {
+    // createPostDto need to be validated and currently failing
     return this.postsService.create(createPostDto, req.user);
   }
 
