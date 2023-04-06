@@ -1,13 +1,15 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Get,
   HttpCode,
   Post,
   Req,
   Res,
-  SerializeOptions,
   UseGuards,
+  UseInterceptors,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -17,10 +19,12 @@ import { Response } from 'express';
 import { JwtAuthenticationGuard } from './jwt-authentication.guard';
 
 @Controller('authentication')
+// 'includeAll' does not work, cannot read property of undefined reading emit problem will occur
+@UseInterceptors(ClassSerializerInterceptor)
+// @SerializeOptions({ strategy: 'exposeAll' }) // expose all does not work ( ERROR [ExceptionsHandler] Cannot read properties of undefined (reading 'emit'))
+// @SerializeOptions({ strategy: 'exposeAll' })
 // Without this and only with @Exclude(), emit error will occur, reason unknown
-@SerializeOptions({
-  strategy: 'excludeAll',
-})
+// Actually this is caused by using express response object on login route
 export class AuthenticationController {
   constructor(private readonly authenticationService: AuthenticationService) {}
 
@@ -34,7 +38,12 @@ export class AuthenticationController {
   }
 
   @Post('register')
-  create(@Body() createUserDto: CreateUserDto) {
+  create(
+    // "skipMissingProperties" was set true globally,
+    // but we want class-validator to check all field to send appropriate error message
+    @Body(new ValidationPipe({ skipMissingProperties: false }))
+    createUserDto: CreateUserDto,
+  ) {
     return this.authenticationService.register(createUserDto);
   }
 
@@ -44,14 +53,16 @@ export class AuthenticationController {
   @UseGuards(LocalAuthGuard)
   @Post('log-in')
   // The req parameter will contain a user property (populated by Passport during the passport-local authentication flow)
-  async login(@Req() request: RequestWithUser, @Res() response: Response) {
+  async login(
+    @Req() request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     // We used request and response of underlying native platform
     // So responding is all up to us
     const { user } = request;
     const cookie = this.authenticationService.getCookieWithJwtToken(user.id);
     response.setHeader('Set-Cookie', cookie);
-    // Here responding with native express
-    return response.send(user);
+    return user;
   }
 
   @UseGuards(JwtAuthenticationGuard)

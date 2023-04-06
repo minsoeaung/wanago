@@ -7,15 +7,14 @@ import {
   Patch,
   Post,
   Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { Request, Response } from 'express';
 import { JwtAuthenticationGuard } from '../authentication/jwt-authentication.guard';
 import { FindOneParams } from '../utils/findOneParams';
+import { RequestWithUser } from '../authentication/requestWithUser.interface';
 
 @Controller('posts')
 export class PostsController {
@@ -25,15 +24,12 @@ export class PostsController {
   // Post controller is able to use this guard with doing anything to its module
   // Meanwhile authentication guard is busy with lots of importing for this guard to work nicely
   @UseGuards(JwtAuthenticationGuard)
-  create(@Body() createPostDto: CreatePostDto) {
-    return this.postsService.create(createPostDto);
+  create(@Body() createPostDto: CreatePostDto, @Req() req: RequestWithUser) {
+    return this.postsService.create(createPostDto, req.user);
   }
 
   @Get()
-  findAll(
-    @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
-  ) {
+  findAll() {
     // return new Promise((foo) => setTimeout(foo, 5000));
     // https://docs.nestjs.com/controllers#request-object
     // We can use the library-specific (e.g., Express) response object,
@@ -44,6 +40,7 @@ export class PostsController {
 
     // The standard approach is automatically disabled if you use express response
     // To use both, must set passThrough option to true
+
     return this.postsService.findAll();
   }
 

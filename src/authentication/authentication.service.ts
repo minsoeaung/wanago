@@ -18,13 +18,11 @@ export class AuthenticationService {
   ) {}
 
   async register(userDto: CreateUserDto) {
-    const hashPassword = await bcrypt.hash(userDto.password, 10);
+    const hashedPassword = await bcrypt.hash(userDto.password, 10);
     try {
-      // This line is not needed anymore because we only expose name and email in User Entity
-      // createdUser.password = undefined;
       return await this.usersService.create({
         ...userDto,
-        password: hashPassword,
+        password: hashedPassword,
       });
     } catch (e) {
       if (e.code === '23505') {
@@ -45,7 +43,6 @@ export class AuthenticationService {
     try {
       const user = await this.usersService.findOneByEmail(email);
       await this.verifyPassword(user.password, hashedPassword);
-      user.password = undefined;
       return user;
     } catch (e) {
       // Email is wrong
