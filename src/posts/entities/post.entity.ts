@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinTable,
   ManyToMany,
   ManyToOne,
@@ -26,6 +27,7 @@ export class Post {
 
   // *** This one does not have JoinColumn, but it will have authorId in database
 
+  @Index('post_authorId_index')
   @ManyToOne(() => User, (author: User) => author.posts)
   author: User; // authorId is stored in the database
 
