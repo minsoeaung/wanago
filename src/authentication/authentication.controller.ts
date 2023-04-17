@@ -17,6 +17,8 @@ import { RequestWithUser } from './requestWithUser.interface';
 import { LocalAuthGuard } from './localAuthentication.guard';
 import { Response } from 'express';
 import { JwtAuthenticationGuard } from './jwt-authentication.guard';
+import { UsersService } from '../users/users.service';
+import { JwtRefreshGuard } from './jwt-refresh.guard';
 
 @Controller('authentication')
 // 'includeAll' does not work, cannot read property of undefined reading emit problem will occur
@@ -26,7 +28,10 @@ import { JwtAuthenticationGuard } from './jwt-authentication.guard';
 // Without this and only with @Exclude(), emit error will occur, reason unknown
 // Actually this is caused by using express response object on login route
 export class AuthenticationController {
-  constructor(private readonly authenticationService: AuthenticationService) {}
+  constructor(
+    private readonly authenticationService: AuthenticationService,
+    private readonly usersService: UsersService,
+  ) {}
 
   // This is utility route for client
   // It verifies JSON Web Tokens and return user data
@@ -59,19 +64,52 @@ export class AuthenticationController {
   ) {
     // We used request and response of underlying native platform
     // So responding is all up to us
+    // ( not anymore by saying passthrough true )
     const { user } = request;
-    const cookie = this.authenticationService.getCookieWithJwtToken(user.id);
-    response.setHeader('Set-Cookie', cookie);
+    const accessTokenCookie = this.authenticationService.getCookieWithJwtToken(
+      user.id,
+    );
+    const refreshTokenCookie =
+      this.authenticationService.getCookieWithJwtRefreshToken(user.id);
+
+    // Save token
+    await this.usersService.setCurrentRefreshToken(
+      refreshTokenCookie.token,
+      user.id,
+    );
+
+    // Set cookie
+    response.setHeader('Set-Cookie', [
+      accessTokenCookie,
+      refreshTokenCookie.cookie,
+    ]);
     return user;
   }
 
+  @HttpCode(200)
   @UseGuards(JwtAuthenticationGuard)
   @Post('log-out')
-  async logOut(@Req() request: RequestWithUser, @Res() response: Response) {
+  async logOut(
+    @Req() request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.usersService.removeRefreshToken(request.user.id);
     response.setHeader(
       'Set-Cookie',
       this.authenticationService.getCookieForLogOut(),
     );
-    return response.sendStatus(200);
+  }
+
+  @UseGuards(JwtRefreshGuard)
+  @Get('refresh')
+  refresh(
+    @Req() request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const accessTokenCookie = this.authenticationService.getCookieWithJwtToken(
+      request.user.id,
+    );
+    response.setHeader('Set-Cookie', accessTokenCookie);
+    return request.user;
   }
 }

@@ -25,6 +25,10 @@ export class User {
   @Exclude()
   password: string;
 
+  @Column({ nullable: true })
+  @Exclude()
+  currentHashedRefreshToken?: string;
+
   // A user can have only one address
   // One address can have only one user
   @OneToOne(() => Address, {
